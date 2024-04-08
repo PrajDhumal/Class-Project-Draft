@@ -1,0 +1,149 @@
+---
+title: "In-depth Analysis of School Nutrition Programs and Dietary Intake"
+author: "Prajin Dhumal"
+date: "04/07/2024"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Introduction
+
+The primary focus of my report is to examine the association between school nutrition agendas and student dietary patterns. Comprehending this connection is essential as it can help inform educational policy and program design to improve student health outcomes.
+
+Current policy shifts have produced a need for strict analysis to define the effectiveness of these programs. To manage this gap, my analysis leverages data from school nutrition records and national health surveys.
+
+## Research Question
+
+My analysis looks to answer the following question: How do school nutrition programs impact students' dietary behaviors and nutritional status?
+
+## Importance of the Study
+
+Investigating this topic is very important for multiple stakeholders, including policymakers, school administrators, and health professionals, as it provides evidence-based insights that can drive decisions in educational and health sections.
+
+
+## The Two Data Sources
+```{r}
+school_nutrition <- read.csv("C:/Users/praji/School_Nutrition_Program_Year_20212022.csv")
+head(school_nutrition)
+
+nhanes_diet <- read.csv("C:/Users/praji/Dietary_Intake_Estimates.csv")
+head(nhanes_diet)
+```
+
+
+## Data Inspection
+```{r}
+# School Nutrition Programs Data Inspection
+str(school_nutrition)
+glimpse(school_nutrition)
+
+# NHANES Dietary Intake Estimates Inspection
+str(nhanes_diet)
+glimpse(nhanes_diet)
+```
+
+## Initial Data Cleaning
+```{r create-school-nutrition-clean}
+# Creating the school_nutrition_clean dataframe from school_nutrition
+school_nutrition_clean <- school_nutrition %>%
+  filter(!is.na(TotalMealsSnacks)) %>%  # Ensure there are no NA values in the TotalMealsSnacks column
+  mutate(PerCapitaMeals = TotalMealsSnacks / EnrollmentQty)  # Calculate meals served per capita
+```
+
+## Data Wrangling
+
+### Enhancing School Nutrition Data with Regular Expressions and User-Defined Functions
+
+```{r enhance-school-nutrition}
+# Example use of a regular expression to extract data from a string column
+school_nutrition_clean <- school_nutrition_clean %>%
+  mutate(FirstWordCEName = str_extract(CEName, "^\\w+"))
+
+# User-defined function to calculate total meals served
+calculate_total_meals <- function(breakfast, lunch, snacks) {
+  breakfast + lunch + snacks
+}
+
+# Use the user-defined function with mutate and rowwise for row-wise operations
+school_nutrition_clean <- rowwise(school_nutrition_clean) %>%
+  mutate(TotalMealsServed = calculate_total_meals(BreakfastServedFree, LunchServedFree, SnacksServedFree))
+
+# Now ungroup the data after rowwise operation
+school_nutrition_clean <- ungroup(school_nutrition_clean)
+```
+
+
+### Demonstrating Control Flow with Loops
+
+```{r}
+# Normalize ADP columns by the maximum value for comparison
+normalized_columns <- c("BreakfastADP", "LunchADP", "SnackADP")
+for (col in normalized_columns) {
+  max_value <- max(school_nutrition_clean[[col]], na.rm = TRUE)
+  school_nutrition_clean[[col]] <- school_nutrition_clean[[col]] / max_value
+}
+```
+
+
+### Preparing NHANES Dietary Data
+
+```{r}
+# Filter to include only data from relevant years and clean specific nutrient columns
+nhanes_clean <- nhanes_diet %>%
+  filter(`Survey.Years` == "2017-2018")
+
+# Pivot data from wide to long format to better handle nutrient variables
+nhanes_long <- pivot_longer(nhanes_clean,
+                            cols = c(`Mean`, `Standard.Error`, `Lower.95..CI.Limit`, `Upper.95..CI.Limit`),
+                            names_to = "Statistic_Type",
+                            values_to = "Value")
+
+# Summarize the long data to get average values per nutrient statistic
+nhanes_summary <- nhanes_long %>%
+  group_by(Survey.Years, Statistic_Type) %>%
+  summarise(AverageValue = mean(Value, na.rm = TRUE), .groups = 'drop')
+
+knitr::kable(nhanes_summary, caption = "Average Nutrient Statistics by Year and Type", format = "html")
+```
+
+
+## Data Visualization
+
+### Relationship Between Total Meals Served, Reimbursement, and Enrollment Over Years
+
+```{r visualization-complex, echo=TRUE, message=FALSE, warning=FALSE}
+ggplot(school_nutrition_clean, aes(x = TotalMealsServed, y = TotalReimbursement)) + 
+  geom_point(aes(color = as.factor(ProgramYear), size = EnrollmentQty), alpha = 0.7) +  # Points with color and size representing different variables
+  geom_smooth(aes(color = as.factor(ProgramYear)), method = "lm", se = FALSE) +  # Regression line per ProgramYear
+  scale_color_brewer(palette = "Set1") +  # Color palette for the ProgramYear
+  scale_size(range = c(1, 8)) +  # Size range for EnrollmentQty
+  labs(title = "Total Meals Served vs. Reimbursement by Year",
+       subtitle = "Size of points represents enrollment quantity",
+       x = "Total Meals Served",
+       y = "Total Reimbursement",
+       color = "Program Year",
+       size = "Enrollment Qty") +
+  theme_minimal() +
+  theme(legend.position = "bottom")  # Adjust legend position
+```
+
+
+### Visualization for NHANES Dietary Data
+
+```{r}
+ggplot(nhanes_summary, aes(x = Statistic_Type, y = AverageValue)) + 
+  geom_bar(aes(fill = as.factor(Survey.Years)), stat = "identity", position = "dodge") +
+  labs(title = "Average Nutrient Statistics by Year and Type",
+       x = "Nutrient Statistic Type",
+       y = "Average Value",
+       fill = "Survey Year") +
+  theme_minimal()
+```
