@@ -147,3 +147,10 @@ ggplot(nhanes_summary, aes(x = Statistic_Type, y = AverageValue)) +
        fill = "Survey Year") +
   theme_minimal()
 ```
+
+This analysis uses two primary datasets: School Nutrition Program Data for the 2021-2022 academic year, and NHANES Dietary Intake Estimates. The datasets are available in the readme.md file
+
+
+
+
+
