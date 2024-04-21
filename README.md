@@ -26,7 +26,3 @@ To run this analysis, you must have R installed on your machine. Once installed,
 ```R
 install.packages("tidyverse")
 
-This analysis uses two primary datasets: School Nutrition Program Data for the 2021-2022 academic year, and NHANES Dietary Intake Estimates. The datasets are available at the following links:
-
-[Dietary_Intake_Estimates.csv](https://github.com/PrajDhumal/Class-Project-Draft/files/14904609/Dietary_Intake_Estimates.csv)
-[School_Nutrition_Program_Year_20212022.csv](https://github.com/PrajDhumal/Class-Project-Draft/files/14904611/School_Nutrition_Program_Year_20212022.csv)
