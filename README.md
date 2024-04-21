@@ -1,4 +1,4 @@
-# In-depth Analysis of School Nutrition Programs and Dietary Intake
+# In-depth Analysis of School Nutrition Programs and Dietary Intake (Report)
 
 ## Introduction
 My analysis investigates the relationship between school nutrition programs and student dietary patterns, delivering insights that could inform educational policy and health program design to enhance student health outcomes.
